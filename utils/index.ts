@@ -1,58 +1,117 @@
-import { CarProps, FilterProps } from "@/types";
+import { CarProps } from "@/types";
+import { mockCars } from "./mockData";
 
-export async function fetchCars(filters: FilterProps) {
-  const { manufacturer, year, model, limit, fuel } = filters;
 
-  const headers = {
-    'X-RapidAPI-Key':'KJwZZIJSFimshuivMSVGaiYzkRomp15f2vKjsnK4bKzuUzVLzA',
-    'X-RapidAPI-Host': 'cars-by-api-ninjas.p.rapidapi.com'
-  }
+// ✅ FETCH CARS (mock version)
+export async function fetchCars(filters: any): Promise<CarProps[]> {
 
-  const response = await fetch(`https://cars-by-api-ninjas.p.rapidapi.com/v1/cars?make=${manufacturer}&year=${year}&model=${model}&limit=${limit}&fuel_type=${fuel}`, {
-    headers: headers,
-  });
+  await new Promise(resolve => setTimeout(resolve, 200));
 
-  const result = await response.json();
+  let cars = [...mockCars];
 
-  return result;
+  if (filters.manufacturer)
+    cars = cars.filter(car =>
+      car.make.toLowerCase()
+        .includes(filters.manufacturer.toLowerCase())
+    );
+
+  if (filters.model)
+    cars = cars.filter(car =>
+      car.model.toLowerCase()
+        .includes(filters.model.toLowerCase())
+    );
+
+  if (filters.year)
+    cars = cars.filter(car =>
+      car.year === filters.year
+    );
+
+  if (filters.fuel)
+    cars = cars.filter(car =>
+      car.fuel_type === filters.fuel
+    );
+
+  return cars.slice(0, filters.limit || 10);
 }
 
-export const calculateCarRent = (city_mpg: number, year: number) => {
-  const basePricePerDay = 50; // Base rental price per day in dollars
-  const mileageFactor = 0.1; // Additional rate per mile driven
-  const ageFactor = 0.05; // Additional rate per year of vehicle age
 
-  // Calculate additional rate based on mileage and age
-  const mileageRate = city_mpg * mileageFactor;
-  const ageRate = (new Date().getFullYear() - year) * ageFactor;
 
-  // Calculate total rental rate per day
-  const rentalRatePerDay = basePricePerDay + mileageRate + ageRate;
+// ✅ CALCULATE RENT
+export function calculateCarRent(
+  city_mpg: number,
+  year: number
+): string {
 
-  return rentalRatePerDay.toFixed(0);
-};
+  const basePrice = 50;
 
-export const generateCarImageUrl = (car: CarProps, angle?: string) => {
-  const url = new URL('https://cdn.imagin.studio/getimage');
+  const mileageFactor = city_mpg * 0.1;
 
-  const { make, year, model } = car;
+  const ageFactor =
+    (new Date().getFullYear() - year) * 0.05;
 
-  url.searchParams.append('customer', 'hrjavascript-mastery');
-  url.searchParams.append('make', make);
-  url.searchParams.append('modelFamily', model.split(' ')[0]);
-  url.searchParams.append('zoomType', 'fullscreen');
-  url.searchParams.append('modelYear', `${year}`);
-  url.searchParams.append('angle', `${angle}`);
+  const rent =
+    basePrice + mileageFactor + ageFactor;
 
-  return `${url}`;
+  return Math.round(rent).toString();
 }
 
-export const updateSearchParams = (type: string, value: string) => {
-  const searchParams = new URLSearchParams(window.location.search);
 
-  searchParams.set(type, value)
-    
-  const newPathname = `${window.location.pathname}?${searchParams.toString()}`
 
-  return newPathname;
+// ✅ GENERATE IMAGE URL (THIS FIXES YOUR ERROR)
+export function generateCarImageUrl(
+  car: CarProps,
+  angle?: string
+): string {
+
+  const url = new URL(
+    "https://cdn.imagin.studio/getimage"
+  );
+
+  url.searchParams.append(
+    "customer",
+    "hrjavascript-mastery"
+  );
+
+  url.searchParams.append(
+    "make",
+    car.make
+  );
+
+  url.searchParams.append(
+    "modelFamily",
+    car.model.split(" ")[0]
+  );
+
+  url.searchParams.append(
+    "modelYear",
+    car.year.toString()
+  );
+
+  url.searchParams.append(
+    "zoomType",
+    "fullscreen"
+  );
+
+  url.searchParams.append(
+    "angle",
+    angle || "front"
+  );
+
+  return url.toString();
+}
+
+
+
+// ✅ UPDATE SEARCH PARAMS (optional)
+export function updateSearchParams(
+  type: string,
+  value: string
+): string {
+
+  const params =
+    new URLSearchParams(window.location.search);
+
+  params.set(type, value);
+
+  return `${window.location.pathname}?${params.toString()}`;
 }
